@@ -16,6 +16,7 @@ import { __prod__ } from "./constants";
 import config from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
+import { UserResolver } from "./resolvers/user";
 
 const server = async () => {
   // database connnection
@@ -37,7 +38,7 @@ const server = async () => {
   const apolloServer = new ApolloServer({
     // graphql schema
     schema: await buildSchema({
-      resolvers: [HelloResolver, PostResolver],
+      resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false, // here we are not using class validator
     }),
     // helps to talk to all the resolvers

@@ -5,6 +5,7 @@ import path from "path";
 // relative import
 import { __prod__ } from "./constants";
 import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 
 export default {
   // default values:
@@ -14,7 +15,7 @@ export default {
     disableForeignKeys: false, // this is to not disabling foriegn keys
   },
 
-  entities: [Post],
+  entities: [Post, User],
   dbName: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
