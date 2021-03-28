@@ -44,19 +44,65 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
   // register
-  @Mutation(() => User)
+  @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
     @Ctx() { em }: MyContext
-  ) {
-    // protected password
+  ): Promise<UserResponse> {
+    // error handling for regsiteration
+    if (options.username.length <= 3) {
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "username must be at least 4 characters long",
+          },
+        ],
+      };
+    }
+
+    if (options.password.length <= 5) {
+      return {
+        errors: [
+          {
+            field: "password",
+            message: "password must be atleast 6 characters long",
+          },
+        ],
+      };
+    }
+
+    // if none of the above conditon does not get triggered
+    // then the user has put valid credentials for our server to register him
+    // here we will presist the user
     const hashedPassword = await agron2.hash(options.password);
     const user = em.create(User, {
       username: options.username,
       password: hashedPassword,
     });
-    await em.persistAndFlush(user);
-    return user;
+
+    // if the user registers with the same credentiials then we have to handle it
+    try {
+      await em.persistAndFlush(user);
+    } catch (err) {
+      console.log("message: ", err.message);
+      // if error includes err.detail.includes("already exists")
+      // 'duplicate username
+
+      if (err.code === "23505") {
+        // error has put username of the same value
+        return {
+          errors: [
+            {
+              field: "username",
+              message: "username already exists",
+            },
+          ],
+        };
+      }
+    }
+
+    return { user };
   }
 
   @Mutation(() => UserResponse)
