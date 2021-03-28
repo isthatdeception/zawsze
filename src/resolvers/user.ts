@@ -7,6 +7,7 @@ import {
   Arg,
   Ctx,
   ObjectType,
+  Query,
 } from "type-graphql";
 import agron2 from "argon2";
 
@@ -43,11 +44,24 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  // me query
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { em, req }: MyContext) {
+    console.log(req.session);
+    // if not logged in return null
+    if (!req.session.userId) {
+      return null;
+    }
+
+    const user = await em.findOne(User, { _id: req.session.userId });
+    return user;
+  }
+
   // register
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
     // error handling for regsiteration
     if (options.username.length <= 3) {
@@ -102,13 +116,19 @@ export class UserResolver {
       }
     }
 
+    // after the user has successfully reggistered we consider hin logged in
+    // so neing friendly
+    // store user id session
+    // this will set a cookie for the user
+    // so that still interact with the site
+    req.session.userId = user._id;
     return { user };
   }
 
   @Mutation(() => UserResponse)
   async login(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
     const user = await em.findOne(User, { username: options.username });
     // if user not found
@@ -134,6 +154,10 @@ export class UserResolver {
         ],
       };
     }
+
+    // presisting the user session
+    req.session!.userId = user._id;
+
     return {
       user,
     };
