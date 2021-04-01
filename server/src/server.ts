@@ -9,6 +9,7 @@ import { buildSchema } from "type-graphql";
 import redis from "redis";
 import session from "express-session";
 import connectRedis from "connect-redis";
+import cors from "cors";
 
 // env
 import dotenv from "dotenv";
@@ -20,7 +21,6 @@ import config from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
-import { MyContext } from "./types";
 
 const server = async () => {
   // database connnection
@@ -44,6 +44,12 @@ const server = async () => {
   const RedisStore = connectRedis(session);
   const redisClient = redis.createClient();
 
+  // exposing new ports with cors
+  // set-origin: to actual client with credentials true
+  app.use(cors({ origin: process.env.CLIENT_URL!, credentials: true }));
+
+  // redis
+  // for tracking sessions
   app.use(
     session({
       name: "qid",
@@ -68,10 +74,18 @@ const server = async () => {
       validate: false, // here we are not using class validator
     }),
     // helps to talk to all the resolvers
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res }),
+    context: ({ req, res }) => ({ em: orm.em, req, res }),
   });
 
-  apolloServer.applyMiddleware({ app });
+  /**
+   * connecting to the client side of the app by using graphql on both sides
+   * by default apollo server uses cors but we want a specific url that can expose
+   * our server side graphql
+   */
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
 
   app.listen(process.env.SERVER_PORT, () => {
     console.log("Server started running at server port");
