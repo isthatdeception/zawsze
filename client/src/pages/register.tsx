@@ -1,39 +1,37 @@
 // static imports
 import { Box, Button } from "@chakra-ui/react";
 import { Form, Formik } from "formik";
-import { useMutation } from "urql";
+import { useRouter } from "next/router";
 
 // relative imports
 import { InputField } from "../components/InputField";
 import { Wrapper } from "../components/Wrapper";
+import { useRegisterMutation } from "../generated/graphql";
+import { toMapErrors } from "../utils/toMapErrors";
 
 interface registerProps {}
 
-// graphql register mutation
-const REGISTER_MUTATION = `
-mutation Register($username: String!, $password: String!) {
-  register(options: { username: $username, password: $password }) {
-    errors {
-      field
-      message
-    }
-
-    user {
-      _id
-      username
-    }
-  }
-}`;
-
 const Register: React.FC<registerProps> = ({}) => {
-  const [, register] = useMutation(REGISTER_MUTATION);
+  const router = useRouter();
+  const [, register] = useRegisterMutation();
   return (
     <Wrapper variant="small">
       <Formik
         initialValues={{ username: "", password: "" }}
-        onSubmit={(values) => {
+        onSubmit={async (values, { setErrors }) => {
           console.log(values);
-          return register(values);
+          // posting the input credentials to the server
+          const response = await register(values);
+          // not worked
+          // by any means
+          if (response.data?.register.errors) {
+            // making sure that we will fetch the error from our server side
+            setErrors(toMapErrors(response.data.register.errors));
+          } else if (response.data?.register.user) {
+            // if it worked
+            // we will redirect the user to the homepage
+            router.push("/");
+          }
         }}
       >
         {({ isSubmitting }) => (
