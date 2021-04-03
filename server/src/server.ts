@@ -16,11 +16,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // relative import
-import { __prod__ } from "./constants";
 import config from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
+import { COOKIE_NAME, __prod__ } from "./constants";
 
 const server = async () => {
   // database connnection
@@ -52,7 +52,7 @@ const server = async () => {
   // for tracking sessions
   app.use(
     session({
-      name: "qid",
+      name: COOKIE_NAME,
       store: new RedisStore({ client: redisClient, disableTouch: true }),
       cookie: {
         maxAge: 10800000, // 3 hours that i.e 1000 * 3 * 60 * 60,

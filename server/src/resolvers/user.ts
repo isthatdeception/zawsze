@@ -15,6 +15,7 @@ import agron2 from "argon2";
 // relative imports
 import { MyContext } from "../types";
 import { User } from "../entities/User";
+import { COOKIE_NAME } from "../constants";
 
 // as an object type
 @InputType()
@@ -178,5 +179,31 @@ export class UserResolver {
     return {
       user,
     };
+  }
+
+  // logout functionality
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    // redis
+    // when clicked on logout on frontend
+    // we are gonna wait for this promise to finish
+    return new Promise((resolve) =>
+      // and the promise is gonna wait for this callback to be finished
+      // ***
+      // destroying the session token which we saved on the server
+      req.session.destroy((err) => {
+        if (err) {
+          // if met ah error in doing logging out sent a false
+          console.log(err);
+          resolve(false);
+          return;
+        }
+        console.log("logged out successfully");
+        // clearing the local storage session on the browser
+        res.clearCookie(COOKIE_NAME);
+        // otherwise true
+        resolve(true);
+      })
+    );
   }
 }
