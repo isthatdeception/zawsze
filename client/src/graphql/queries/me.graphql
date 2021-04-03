@@ -1,0 +1,8 @@
+# to indentify that one is logged in or not
+
+query Me {
+  me {
+    username
+    _id
+  }
+}
