@@ -10,10 +10,12 @@ import {
   Query,
 } from "type-graphql";
 import agron2 from "argon2";
+// import { EntityManager } from "@mikro-orm/postgresql";
 
 // relative imports
 import { MyContext } from "../types";
 import { User } from "../entities/User";
+import { COOKIE_NAME } from "../constants";
 
 // as an object type
 @InputType()
@@ -95,14 +97,30 @@ export class UserResolver {
       password: hashedPassword,
     });
 
+    // let user
     // if the user registers with the same credentiials then we have to handle it
     try {
+      // query builder
+      // for implicit behaviour with our server
+      // const result = (em as EntityManager)
+      //   .createQueryBuilder(User)
+      //   .getKnexQuery()
+      //   .insert({
+      //     username: options.username,
+      //     password: hashedPassword,
+      //     created_at: new Date(),
+      //     updated_at: new Date(),
+      //   })
+      //   .returning("*");
+
+      // user = result[0];
       await em.persistAndFlush(user);
     } catch (err) {
       console.log("message: ", err.message);
-      // if error includes err.detail.includes("already exists")
-      // 'duplicate username
+      // err.code did not worked so i just did err.detail.includes('already taken')
+      // duplicate username
 
+      // if (err.detail.includes("already exits")) {
       if (err.code === "23505") {
         // error has put username of the same value
         return {
@@ -161,5 +179,31 @@ export class UserResolver {
     return {
       user,
     };
+  }
+
+  // logout functionality
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    // redis
+    // when clicked on logout on frontend
+    // we are gonna wait for this promise to finish
+    return new Promise((resolve) =>
+      // and the promise is gonna wait for this callback to be finished
+      // ***
+      // destroying the session token which we saved on the server
+      req.session.destroy((err) => {
+        if (err) {
+          // if met ah error in doing logging out sent a false
+          console.log(err);
+          resolve(false);
+          return;
+        }
+        console.log("logged out successfully");
+        // clearing the local storage session on the browser
+        res.clearCookie(COOKIE_NAME);
+        // otherwise true
+        resolve(true);
+      })
+    );
   }
 }

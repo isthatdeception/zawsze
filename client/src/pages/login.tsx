@@ -7,15 +7,13 @@ import { useRouter } from "next/router";
 // relative imports
 import { InputField } from "../components/InputField";
 import { Wrapper } from "../components/Wrapper";
-import { useRegisterMutation } from "../generated/graphql";
+import { useLoginMutation } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 import { toMapErrors } from "../utils/toMapErrors";
 
-interface registerProps {}
-
-const Register: React.FC<registerProps> = ({}) => {
+const Login: React.FC<{}> = ({}) => {
   const router = useRouter();
-  const [, register] = useRegisterMutation();
+  const [, login] = useLoginMutation();
   return (
     <Wrapper variant="small">
       <Formik
@@ -23,13 +21,13 @@ const Register: React.FC<registerProps> = ({}) => {
         onSubmit={async (values, { setErrors }) => {
           console.log(values);
           // posting the input credentials to the server
-          const response = await register(values);
+          const response = await login({ options: values });
           // not worked
           // by any means
-          if (response.data?.register.errors) {
+          if (response.data?.login.errors) {
             // making sure that we will fetch the error from our server side
-            setErrors(toMapErrors(response.data.register.errors));
-          } else if (response.data?.register.user) {
+            setErrors(toMapErrors(response.data.login.errors));
+          } else if (response.data?.login.user) {
             // if it worked
             // we will redirect the user to the homepage
             router.push("/");
@@ -58,7 +56,7 @@ const Register: React.FC<registerProps> = ({}) => {
               isLoading={isSubmitting}
               colorScheme="twitter"
             >
-              register
+              login
             </Button>
           </Form>
         )}
@@ -67,4 +65,4 @@ const Register: React.FC<registerProps> = ({}) => {
   );
 };
 
-export default withUrqlClient(createUrqlClient)(Register);
+export default withUrqlClient(createUrqlClient)(Login);
