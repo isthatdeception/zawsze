@@ -1,0 +1,9 @@
+
+/ a moment for how our server side rendering or ssr will happen /
+
+* me (user) -> browser (sends a request) // client side
+* -> nextjs server
+* -> request graphql server 
+* -> building the html document that is needed
+* -> server sends that requested page to the client
+
