@@ -20,6 +20,10 @@ export class User {
   @Property({ type: "text", unique: true })
   username!: string;
 
+  @Field()
+  @Property({ type: "text", unique: true })
+  email!: string;
+
   // we won't allow password as we didnot exposed it
   @Property({ type: "text" })
   password!: string;

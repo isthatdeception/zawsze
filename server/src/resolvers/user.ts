@@ -24,6 +24,8 @@ class UsernamePasswordInput {
   username: string;
   @Field()
   password: string;
+  @Field()
+  email: string;
 }
 
 @ObjectType()
@@ -46,6 +48,20 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  // forgotten password
+  @Mutation(() => Boolean)
+  async forgotPassword(@Arg("email") email: string, @Ctx() { em }: MyContext) {
+    const user = await em.findOne(User, { email });
+
+    // not found
+    if (!user) {
+      // user is not in db
+      return true; // for security purposes
+    }
+
+    return true;
+  }
+
   // me query
   @Query(() => User, { nullable: true })
   async me(@Ctx() { em, req }: MyContext) {
@@ -77,6 +93,19 @@ export class UserResolver {
       };
     }
 
+    // to make sure that one cannot have @ sign in thier username
+    // for our validation to work
+    if (options.username.includes("@")) {
+      return {
+        errors: [
+          {
+            field: "username",
+            message: "username cannot have an @ sign",
+          },
+        ],
+      };
+    }
+
     if (options.password.length <= 5) {
       return {
         errors: [
@@ -88,12 +117,25 @@ export class UserResolver {
       };
     }
 
+    // for email validation
+    if (!options.email.includes("@")) {
+      return {
+        errors: [
+          {
+            field: "email",
+            message: "invalid email",
+          },
+        ],
+      };
+    }
+
     // if none of the above conditon does not get triggered
     // then the user has put valid credentials for our server to register him
     // here we will presist the user
     const hashedPassword = await agron2.hash(options.password);
     const user = em.create(User, {
       username: options.username,
+      email: options.email,
       password: hashedPassword,
     });
 
@@ -145,22 +187,29 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg("options") options: UsernamePasswordInput,
+    // @Arg("options") options: UsernamePasswordInput,
+    @Arg("usernameOrEmail") usernameOrEmail: string,
+    @Arg("password") password: string,
     @Ctx() { em, req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(User, { username: options.username });
+    const user = await em.findOne(
+      User,
+      usernameOrEmail.includes("@")
+        ? { email: usernameOrEmail }
+        : { username: usernameOrEmail }
+    );
     // if user not found
     if (!user) {
       return {
         errors: [
           {
-            field: "username",
-            message: "this username doesn't exist",
+            field: "usernameOrEmail",
+            message: "this username or email doesn't exist",
           },
         ],
       };
     }
-    const valid = await agron2.verify(user.password, options.password);
+    const valid = await agron2.verify(user.password, password);
     // if user did not put valid credentials by using wrong password
     if (!valid) {
       return {
