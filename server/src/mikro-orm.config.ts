@@ -3,7 +3,7 @@ import { MikroORM } from "@mikro-orm/core";
 import path from "path";
 
 // relative import
-import { __prod__ } from "./constants";
+import { DB_NAME, DB_PASSWORD, DB_TYPE, DB_USER, __prod__ } from "./constants";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 
@@ -16,9 +16,9 @@ export default {
   },
 
   entities: [Post, User],
-  dbName: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  type: process.env.DB_TYPE,
+  dbName: DB_NAME,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  type: DB_TYPE,
   debug: !__prod__,
 } as Parameters<typeof MikroORM.init>[0];

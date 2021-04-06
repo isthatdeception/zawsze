@@ -10,12 +10,15 @@ import {
   Query,
 } from "type-graphql";
 import agron2 from "argon2";
+import { v4 as uuidv4 } from "uuid";
+
 // import { EntityManager } from "@mikro-orm/postgresql";
 
 // relative imports
 import { MyContext } from "../types";
 import { User } from "../entities/User";
-import { COOKIE_NAME } from "../constants";
+import { CLIENT_URL, COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
+import { sendEmail } from "../utils/sendEmail";
 
 // as an object type
 @InputType()
@@ -48,9 +51,80 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  // change password
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg("token") token: string,
+    @Arg("newPassword") newPassword: string,
+    @Ctx() { redis, em, req }: MyContext
+  ): Promise<UserResponse> {
+    // checking that new password is valid or not
+    // for consistency in our db
+    if (newPassword.length <= 5) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message: "password must be atleast 6 characters long",
+          },
+        ],
+      };
+    }
+
+    // after checking the password is valid
+    // we will ensure that token is valid and not expired
+    const key = FORGET_PASSWORD_PREFIX + token;
+    const userId = await redis.get(key);
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "token expired",
+          },
+        ],
+      };
+    }
+
+    const user = await em.findOne(User, { _id: parseInt(userId) });
+
+    // if for some reason we still did not get the user
+    // we might need some error checking for that
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "user no longer exists",
+          },
+        ],
+      };
+    }
+
+    // if we got an user back then we will change the password
+    // and hash it to the db
+    user.password = await agron2.hash(newPassword);
+    await em.persistAndFlush(user);
+
+    // once we changed the password successfully
+    // we will delete so this won't get used
+    await redis.del(key);
+
+    // login the user after changing the password
+    // for which we need to immediately start that concerned user session
+    req.session.userId = user._id;
+
+    return {
+      user,
+    };
+  }
+
   // forgotten password
   @Mutation(() => Boolean)
-  async forgotPassword(@Arg("email") email: string, @Ctx() { em }: MyContext) {
+  async forgotPassword(
+    @Arg("email") email: string,
+    @Ctx() { em, redis }: MyContext
+  ) {
     const user = await em.findOne(User, { email });
 
     // not found
@@ -58,6 +132,32 @@ export class UserResolver {
       // user is not in db
       return true; // for security purposes
     }
+
+    // if there is a user and is in need to
+    // get new credentials for an account we will
+    // give them an email offering a link so that
+    // one can change his password with the link which directs to our client side
+    // with an specific secret token so that our server will recognize the user
+    // and the valid token
+
+    // this will give a random unique string
+    // 783473djskad-ujdhs-323-kdskd
+
+    // intializing the new token
+    const token = uuidv4();
+
+    // storing in the redis
+    await redis.set(
+      FORGET_PASSWORD_PREFIX + token,
+      user._id,
+      "ex",
+      1000 * 60 * 2
+    ); // 2 mins
+
+    await sendEmail(
+      email,
+      `<a href="${CLIENT_URL}/change-password/${token}">reset-password</a>`
+    );
 
     return true;
   }
