@@ -6,7 +6,7 @@ import { MikroORM } from "@mikro-orm/core";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
-import redis from "redis";
+import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import cors from "cors";
@@ -20,7 +20,13 @@ import config from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
-import { COOKIE_NAME, __prod__ } from "./constants";
+import {
+  CLIENT_URL,
+  COOKIE_NAME,
+  REDIS_SECRET_KEY,
+  SERVER_PORT,
+  __prod__,
+} from "./constants";
 
 const server = async () => {
   // database connnection
@@ -42,18 +48,18 @@ const server = async () => {
   // redis for caching or presisting user sessions
   // redis initialize
   const RedisStore = connectRedis(session);
-  const redisClient = redis.createClient();
+  const redis = new Redis();
 
   // exposing new ports with cors
   // set-origin: to actual client with credentials true
-  app.use(cors({ origin: process.env.CLIENT_URL!, credentials: true }));
+  app.use(cors({ origin: CLIENT_URL, credentials: true }));
 
   // redis
   // for tracking sessions
   app.use(
     session({
       name: COOKIE_NAME,
-      store: new RedisStore({ client: redisClient, disableTouch: true }),
+      store: new RedisStore({ client: redis, disableTouch: true }),
       cookie: {
         maxAge: 10800000, // 3 hours that i.e 1000 * 3 * 60 * 60,
         httpOnly: true, // for not making available on the front end
@@ -61,7 +67,7 @@ const server = async () => {
         secure: __prod__, // site can be only be accessible if it is https for true
       },
       saveUninitialized: false,
-      secret: process.env.REDIS_SECRET_KEY!,
+      secret: REDIS_SECRET_KEY,
       resave: false,
     })
   );
@@ -74,7 +80,7 @@ const server = async () => {
       validate: false, // here we are not using class validator
     }),
     // helps to talk to all the resolvers
-    context: ({ req, res }) => ({ em: orm.em, req, res }),
+    context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
   });
 
   /**
@@ -87,7 +93,7 @@ const server = async () => {
     cors: false,
   });
 
-  app.listen(process.env.SERVER_PORT, () => {
+  app.listen(SERVER_PORT, () => {
     console.log("Server started running at server port");
   });
 };
