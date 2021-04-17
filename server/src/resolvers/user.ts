@@ -19,6 +19,7 @@ import { MyContext } from "../types";
 import { User } from "../entities/User";
 import { CLIENT_URL, COOKIE_NAME, FORGET_PASSWORD_PREFIX } from "../constants";
 import { sendEmail } from "../utils/sendEmail";
+import { getConnection } from "typeorm";
 
 // as an object type
 @InputType()
@@ -56,7 +57,7 @@ export class UserResolver {
   async changePassword(
     @Arg("token") token: string,
     @Arg("newPassword") newPassword: string,
-    @Ctx() { redis, em, req }: MyContext
+    @Ctx() { redis, req }: MyContext
   ): Promise<UserResponse> {
     // checking that new password is valid or not
     // for consistency in our db
@@ -86,7 +87,8 @@ export class UserResolver {
       };
     }
 
-    const user = await em.findOne(User, { _id: parseInt(userId) });
+    const userIdNum = parseInt(userId);
+    const user = await User.findOne(userIdNum);
 
     // if for some reason we still did not get the user
     // we might need some error checking for that
@@ -103,8 +105,11 @@ export class UserResolver {
 
     // if we got an user back then we will change the password
     // and hash it to the db
-    user.password = await agron2.hash(newPassword);
-    await em.persistAndFlush(user);
+
+    await User.update(
+      { _id: userIdNum },
+      { password: await agron2.hash(newPassword) }
+    );
 
     // once we changed the password successfully
     // we will delete so this won't get used
@@ -123,9 +128,9 @@ export class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(
     @Arg("email") email: string,
-    @Ctx() { em, redis }: MyContext
+    @Ctx() { redis }: MyContext
   ) {
-    const user = await em.findOne(User, { email });
+    const user = await User.findOne({ where: { email } });
 
     // not found
     if (!user) {
@@ -164,14 +169,14 @@ export class UserResolver {
 
   // me query
   @Query(() => User, { nullable: true })
-  async me(@Ctx() { em, req }: MyContext) {
+  async me(@Ctx() { req }: MyContext) {
     console.log(req.session);
     // if not logged in return null
     if (!req.session.userId) {
       return null;
     }
 
-    const user = await em.findOne(User, { _id: req.session.userId });
+    const user = await User.findOne(req.session.userId);
     return user;
   }
 
@@ -179,7 +184,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordInput,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     // error handling for regsiteration
     if (options.username.length <= 3) {
@@ -233,15 +238,26 @@ export class UserResolver {
     // then the user has put valid credentials for our server to register him
     // here we will presist the user
     const hashedPassword = await agron2.hash(options.password);
-    const user = em.create(User, {
-      username: options.username,
-      email: options.email,
-      password: hashedPassword,
-    });
 
-    // let user
+    let user;
     // if the user registers with the same credentiials then we have to handle it
     try {
+      // typeorm query builder
+      // we could also have done
+      // user.create({}).save()
+      // with all the values under the bracket
+      const result = await getConnection()
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({
+          username: options.username,
+          email: options.email,
+          password: hashedPassword,
+        })
+        .returning("*")
+        .execute();
+
       // query builder
       // for implicit behaviour with our server
       // const result = (em as EntityManager)
@@ -256,13 +272,15 @@ export class UserResolver {
       //   .returning("*");
 
       // user = result[0];
-      await em.persistAndFlush(user);
+      // console.log("result: ", result);
+      user = result.raw[0];
     } catch (err) {
       console.log("message: ", err.message);
       // err.code did not worked so i just did err.detail.includes('already taken')
       // duplicate username
 
       // if (err.detail.includes("already exits")) {
+      console.log("err: ", err);
       if (err.code === "23505") {
         // error has put username of the same value
         return {
@@ -290,13 +308,12 @@ export class UserResolver {
     // @Arg("options") options: UsernamePasswordInput,
     @Arg("usernameOrEmail") usernameOrEmail: string,
     @Arg("password") password: string,
-    @Ctx() { em, req }: MyContext
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await em.findOne(
-      User,
+    const user = await User.findOne(
       usernameOrEmail.includes("@")
-        ? { email: usernameOrEmail }
-        : { username: usernameOrEmail }
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
     );
     // if user not found
     if (!user) {
