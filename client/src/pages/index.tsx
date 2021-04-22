@@ -1,9 +1,10 @@
 // static imports
-import { Text } from "@chakra-ui/react";
+import { Link, Text } from "@chakra-ui/react";
 import { withUrqlClient } from "next-urql";
+import NextLink from "next/link";
 
 // relative imports
-import { NavBar } from "../components/NavBar";
+import { Layout } from "../components/Layout";
 import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
@@ -11,8 +12,7 @@ const Index = () => {
   // posts
   const [{ data }] = usePostsQuery();
   return (
-    <>
-      <NavBar />
+    <Layout>
       <Text
         bgGradient="linear(to-l, #0a043c,#FF0080)"
         bgClip="text"
@@ -23,13 +23,16 @@ const Index = () => {
         <br />
         have fun.
       </Text>
+      <NextLink href="/create-post">
+        <Link>create-post</Link>
+      </NextLink>
       <br />
       {!data ? (
         <div>...loading</div>
       ) : (
         data.posts.map((post) => <div key={post._id}>{post.title}</div>)
       )}
-    </>
+    </Layout>
   );
 };
 

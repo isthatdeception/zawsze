@@ -4,6 +4,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
+  Textarea,
 } from "@chakra-ui/react";
 import { useField } from "formik";
 import React, { InputHTMLAttributes } from "react";
@@ -11,14 +12,24 @@ import React, { InputHTMLAttributes } from "react";
 type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   name: string;
   label: string;
+  textarea?: boolean;
 };
 
 // unused varriable like size are off the props
 export const InputField: React.FC<InputFieldProps> = ({
   label,
   size: _,
+  textarea,
   ...props
 }) => {
+  // for redundant measures to make it possible to have both input and text area
+  // on our same input field
+  let CommonField: any;
+  CommonField = Input;
+  if (textarea) {
+    CommonField = Textarea;
+  }
+
   const [field, { error }] = useField(props);
 
   /**
@@ -35,7 +46,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   return (
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={field.name}>{label}</FormLabel>
-      <Input
+      <CommonField
         {...field}
         {...props}
         id={field.name}
