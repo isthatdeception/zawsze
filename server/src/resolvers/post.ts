@@ -4,13 +4,16 @@ import {
   Arg,
   Ctx,
   Field,
+  FieldResolver,
   InputType,
   Int,
   Mutation,
   Query,
   Resolver,
+  Root,
   UseMiddleware,
 } from "type-graphql";
+import { getConnection } from "typeorm";
 
 // relative imports
 import { Post } from "../entities/Post";
@@ -25,18 +28,44 @@ class PostInput {
   text: string;
 }
 
-@Resolver()
+@Resolver(Post)
 export class PostResolver {
   // read posts
   @Query(() => [Post]) // graphql type
-  async posts(): Promise<Post[]> {
-    return Post.find();
+  async posts(
+    @Arg("limit", () => Int) limit: number,
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
+  ): Promise<Post[]> {
+    // a limit for our pagination
+    const realLimit = Math.min(50, limit);
+
+    // querybuilder
+    const qb = getConnection()
+      .getRepository(Post)
+      .createQueryBuilder("post")
+
+      .orderBy('"createdAt"', "DESC")
+      .take(realLimit);
+
+    // if there is a cursor we will paginate the data
+    if (cursor) {
+      qb.where('"createdAt" < :cursor', { cursor: new Date(parseInt(cursor)) });
+    }
+
+    return qb.getMany();
   }
 
   // reading a specific one
   @Query(() => Post, { nullable: true })
   post(@Arg("_id", () => Int) _id: number): Promise<Post | undefined> {
     return Post.findOne(_id);
+  }
+
+  // slicing the long posts so that one content doesnot take up all the space of
+  // app and its post
+  @FieldResolver(() => String)
+  textSnippet(@Root() root: Post) {
+    return root.text.slice(0, 100);
   }
 
   // create post""

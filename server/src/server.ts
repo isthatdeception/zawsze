@@ -30,7 +30,12 @@ import {
 const server = async () => {
   // typeorm db connection
   const conn: Connection = await createConnection();
-  console.log(conn.isConnected);
+  console.log("connected: ", conn.isConnected);
+
+  await conn.runMigrations();
+
+  //for deleteing all the bad posts from our database
+  // await Post.delete({});
 
   // express server
   const app = express();

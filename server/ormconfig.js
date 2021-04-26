@@ -14,5 +14,6 @@ module.exports = {
   password: process.env.DB_PASSWORD,
   logging: true,
   synchronize: true,
+  migrations: ["dist/migrations/**/*.js"],
   entities: ["dist/**/*.js"],
 };
