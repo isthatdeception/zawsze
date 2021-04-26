@@ -2,7 +2,6 @@
 
 // static imports
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
@@ -10,13 +9,13 @@ import Redis from "ioredis";
 import session from "express-session";
 import connectRedis from "connect-redis";
 import cors from "cors";
+import { Connection, createConnection } from "typeorm";
 
 // env
 import dotenv from "dotenv";
 dotenv.config();
 
 // relative import
-import config from "./mikro-orm.config";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
@@ -29,20 +28,16 @@ import {
 } from "./constants";
 
 const server = async () => {
-  // database connnection
-  const orm = await MikroORM.init(config);
-  await orm.getMigrator().up(); // automating the migration process
+  // typeorm db connection
+  const conn: Connection = await createConnection();
+  console.log("connected: ", conn.isConnected);
 
-  // // post
-  // const post = orm.em.create(Post, { title: "first post!" });
-  // await orm.em.persistAndFlush(post);
+  await conn.runMigrations();
 
-  // // just a console.log for separating these 2
-  // console.log("------------sql2------------");
+  //for deleteing all the bad posts from our database
+  // await Post.delete({});
 
-  // const posts = await orm.em.find(Post, {});
-  // console.log(posts);
-
+  // express server
   const app = express();
 
   // redis for caching or presisting user sessions
@@ -80,7 +75,7 @@ const server = async () => {
       validate: false, // here we are not using class validator
     }),
     // helps to talk to all the resolvers
-    context: ({ req, res }) => ({ em: orm.em, req, res, redis }),
+    context: ({ req, res }) => ({ req, res, redis }),
   });
 
   /**

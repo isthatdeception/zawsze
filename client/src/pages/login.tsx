@@ -30,9 +30,17 @@ const Login: React.FC<{}> = ({}) => {
               // making sure that we will fetch the error from our server side
               setErrors(toMapErrors(response.data.login.errors));
             } else if (response.data?.login.user) {
-              // if it worked
-              // we will redirect the user to the homepage
-              router.push("/");
+              // if the user page  have an query object
+              // we will load it directly to the user
+              if (typeof router.query.next === "string") {
+                // if it exists we will deliver it to the user
+                // if he logged in through the create-post route
+                router.push(router.query.next);
+              } else {
+                // if it worked
+                // we will redirect the user to the homepage
+                router.push("/");
+              }
             }
           }}
         >
