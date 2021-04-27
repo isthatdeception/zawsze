@@ -8,6 +8,7 @@ import {
   InputType,
   Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
   Root,
@@ -28,16 +29,39 @@ class PostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field()
+  hasMore: boolean;
+}
+
 @Resolver(Post)
 export class PostResolver {
   // read posts
-  @Query(() => [Post]) // graphql type
+  @Query(() => PaginatedPosts) // graphql type
   async posts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
+    /**
+     *  if our limit is 50 then we will fetch 51 so that
+     *  we can track when extra posts are available to show to our users
+     *
+     *  hasmore just ensures we will not show the load more button if we get out of the posts
+     *  to show to our user
+     *
+     *  50 -> 51 if exists then hasMore is true
+     *  loadmore button will show
+     *
+     *  after that we will show the user all the posts within the real limit as
+     *  it was supposed to
+     */
+
     // a limit for our pagination
     const realLimit = Math.min(50, limit);
+    const paginatedLimit = realLimit + 1;
 
     // querybuilder
     const qb = getConnection()
@@ -45,14 +69,19 @@ export class PostResolver {
       .createQueryBuilder("post")
 
       .orderBy('"createdAt"', "DESC")
-      .take(realLimit);
+      .take(paginatedLimit);
 
     // if there is a cursor we will paginate the data
     if (cursor) {
       qb.where('"createdAt" < :cursor', { cursor: new Date(parseInt(cursor)) });
     }
 
-    return qb.getMany();
+    const posts = await qb.getMany();
+
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === paginatedLimit,
+    }; // hasmore: true
   }
 
   // reading a specific one
@@ -65,7 +94,7 @@ export class PostResolver {
   // app and its post
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
-    return root.text.slice(0, 100);
+    return root.text.slice(0, 150);
   }
 
   // create post""
