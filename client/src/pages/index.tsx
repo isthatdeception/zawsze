@@ -39,7 +39,7 @@ const Index = () => {
           fontSize="6xl"
           fontWeight="extrabold"
           bgGradient="linear(to-l, #f05454, #f05454)"
-          fon
+          fontStyle="inherit"
         >
           zawsze
         </Heading>

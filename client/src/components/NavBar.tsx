@@ -26,10 +26,12 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     body = (
       <>
         <NextLink href="/login">
-          <Link mr={2}>login</Link>
+          <Link mr={2} textDecoration="none">
+            login
+          </Link>
         </NextLink>
         <NextLink href="/register">
-          <Link>register</Link>
+          <Link textDecoration="none">register</Link>
         </NextLink>
       </>
     );
@@ -54,6 +56,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           variant="solid"
           ml={2}
           colorScheme="twitter"
+          textDecoration="none"
           isLoading={logoutFetching}
           onClick={() => {
             logout();

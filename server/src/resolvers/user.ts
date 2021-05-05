@@ -8,6 +8,8 @@ import {
   Ctx,
   ObjectType,
   Query,
+  FieldResolver,
+  Root,
 } from "type-graphql";
 import agron2 from "argon2";
 import { v4 as uuidv4 } from "uuid";
@@ -50,8 +52,20 @@ class UserResponse {
   user?: User;
 }
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  // email should be hidden for other users.
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    // if this is true
+    // we will show the user thier id
+    if (req.session.userId === user._id) {
+      return user.email;
+    }
+    // if one is not the owner of the posts we will hide thier email address
+    return "";
+  }
+
   // change password
   @Mutation(() => UserResponse)
   async changePassword(

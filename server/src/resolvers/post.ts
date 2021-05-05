@@ -63,20 +63,50 @@ export class PostResolver {
     const realLimit = Math.min(50, limit);
     const paginatedLimit = realLimit + 1;
 
-    // querybuilder
-    const qb = getConnection()
-      .getRepository(Post)
-      .createQueryBuilder("post")
+    const justPaginate: any[] = [paginatedLimit];
 
-      .orderBy('"createdAt"', "DESC")
-      .take(paginatedLimit);
-
-    // if there is a cursor we will paginate the data
+    // if there is a cursor paginate the data
     if (cursor) {
-      qb.where('"createdAt" < :cursor', { cursor: new Date(parseInt(cursor)) });
+      justPaginate.push(new Date(parseInt(cursor)));
     }
 
-    const posts = await qb.getMany();
+    const posts = await getConnection().query(
+      `
+      select p.*, 
+      json_build_object(
+        '_id', u._id,
+        'username', u.username,
+        'email', u.email,
+        'createdAt', u."createdAt",
+        'updatedAt', u."updatedAt"
+        ) creator
+      from post p
+      inner join public.user u on u._id = p."creatorId"
+      ${cursor ? `where p."createdAt" < $2` : ""}
+      order by p."createdAt" DESC
+      limit $1
+    `,
+      justPaginate
+    );
+
+    // querybuilder
+    // const qb = getConnection()
+    //   .getRepository(Post)
+    //   .createQueryBuilder("post")
+
+    //   .innerJoinAndSelect("post.creator", "user", 'user._id = post."creatorId"')
+    //   .orderBy('post."createdAt"', "DESC")
+    //   .take(paginatedLimit);
+
+    // if there is a cursor we will paginate the data
+    // if (cursor) {
+    //   qb.where('post."createdAt" < :cursor', {
+    //     cursor: new Date(parseInt(cursor)),
+    //   });
+    // }
+
+    // const posts = await qb.getMany();
+    console.log("posts: ", posts);
 
     return {
       posts: posts.slice(0, realLimit),
