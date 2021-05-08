@@ -14,6 +14,7 @@ import React, { useState } from "react";
 
 // relative imports
 import { Layout } from "../components/Layout";
+import { UpdooSec } from "../components/UpdooSec";
 import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
@@ -43,8 +44,11 @@ const Index = () => {
         >
           zawsze
         </Heading>
+
         <NextLink href="/create-post">
-          <Link ml="auto">create-post</Link>
+          <Link ml="auto" textDecoration="none">
+            create-post
+          </Link>
         </NextLink>
       </Flex>
 
@@ -62,8 +66,18 @@ const Index = () => {
               flex="1"
               borderRadius="md"
             >
-              <Heading fontSize="xl">{post.title}</Heading>
-              <Text mt={4}>{post.textSnippet}</Text>
+              <Flex>
+                <UpdooSec post={post} />
+                <Flex direction="column">
+                  <Flex alignItems="flex-grow">
+                    <Heading fontSize="xl">{post.title}</Heading>
+                    <Text size="sm" ml={4} fontWeight="medium">
+                      › posted by {post.creator.username}
+                    </Text>
+                  </Flex>
+                  <Text mt={4}>{post.textSnippet}</Text>
+                </Flex>
+              </Flex>
             </Box>
           ))}
         </Stack>

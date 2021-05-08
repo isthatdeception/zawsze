@@ -30,7 +30,7 @@ import {
 const server = async () => {
   // typeorm db connection
   const conn: Connection = await createConnection();
-  console.log("connected: ", conn.isConnected);
+  console.log("database is connected: ", conn.isConnected);
 
   await conn.runMigrations();
 

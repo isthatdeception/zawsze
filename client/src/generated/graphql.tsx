@@ -26,6 +26,7 @@ export type FieldError = {
 
 export type Mutation = {
   __typename?: "Mutation";
+  vote: Scalars["Boolean"];
   createPost: Post;
   updatePost?: Maybe<Post>;
   deletePost: Scalars["Boolean"];
@@ -34,6 +35,11 @@ export type Mutation = {
   register: UserResponse;
   login: UserResponse;
   logout: Scalars["Boolean"];
+};
+
+export type MutationVoteArgs = {
+  value: Scalars["Int"];
+  postId: Scalars["Int"];
 };
 
 export type MutationCreatePostArgs = {
@@ -80,6 +86,7 @@ export type Post = {
   text: Scalars["String"];
   zpoints: Scalars["Float"];
   creatorId: Scalars["Float"];
+  creator: User;
   createdAt: Scalars["String"];
   updatedAt: Scalars["String"];
   textSnippet: Scalars["String"];
@@ -132,6 +139,22 @@ export type ErrorInfoFragment = { __typename?: "FieldError" } & Pick<
   FieldError,
   "field" | "message"
 >;
+
+export type PostSnippetFragment = { __typename?: "Post" } & Pick<
+  Post,
+  | "_id"
+  | "createdAt"
+  | "updatedAt"
+  | "title"
+  | "textSnippet"
+  | "creatorId"
+  | "zpoints"
+> & {
+    creator: { __typename?: "User" } & Pick<
+      User,
+      "_id" | "username" | "createdAt" | "updatedAt" | "email"
+    >;
+  };
 
 export type UserInfoFragment = { __typename?: "User" } & Pick<
   User,
@@ -202,6 +225,13 @@ export type RegisterMutation = { __typename?: "Mutation" } & {
   register: { __typename?: "UserResponse" } & UserResponseInfoFragment;
 };
 
+export type VoteMutationVariables = Exact<{
+  value: Scalars["Int"];
+  postId: Scalars["Int"];
+}>;
+
+export type VoteMutation = { __typename?: "Mutation" } & Pick<Mutation, "vote">;
+
 export type MeQueryVariables = Exact<{ [key: string]: never }>;
 
 export type MeQuery = { __typename?: "Query" } & {
@@ -215,15 +245,28 @@ export type PostsQueryVariables = Exact<{
 
 export type PostsQuery = { __typename?: "Query" } & {
   posts: { __typename?: "PaginatedPosts" } & Pick<PaginatedPosts, "hasMore"> & {
-      posts: Array<
-        { __typename?: "Post" } & Pick<
-          Post,
-          "_id" | "createdAt" | "updatedAt" | "title" | "textSnippet"
-        >
-      >;
+      posts: Array<{ __typename?: "Post" } & PostSnippetFragment>;
     };
 };
 
+export const PostSnippetFragmentDoc = gql`
+  fragment postSnippet on Post {
+    _id
+    createdAt
+    updatedAt
+    title
+    textSnippet
+    creatorId
+    zpoints
+    creator {
+      _id
+      username
+      createdAt
+      updatedAt
+      email
+    }
+  }
+`;
 export const ErrorInfoFragmentDoc = gql`
   fragment errorInfo on FieldError {
     field
@@ -331,6 +374,15 @@ export function useRegisterMutation() {
     RegisterDocument
   );
 }
+export const VoteDocument = gql`
+  mutation Vote($value: Int!, $postId: Int!) {
+    vote(value: $value, postId: $postId)
+  }
+`;
+
+export function useVoteMutation() {
+  return Urql.useMutation<VoteMutation, VoteMutationVariables>(VoteDocument);
+}
 export const MeDocument = gql`
   query Me {
     me {
@@ -350,14 +402,11 @@ export const PostsDocument = gql`
     posts(limit: $limit, cursor: $cursor) {
       hasMore
       posts {
-        _id
-        createdAt
-        updatedAt
-        title
-        textSnippet
+        ...postSnippet
       }
     }
   }
+  ${PostSnippetFragmentDoc}
 `;
 
 export function usePostsQuery(

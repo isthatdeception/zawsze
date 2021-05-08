@@ -39,6 +39,44 @@ class PaginatedPosts {
 
 @Resolver(Post)
 export class PostResolver {
+  // voting on a post
+  // and checking the user is logged in
+  // only then he is authorized to vote
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const isUpdoo = value !== -1;
+    const absoluteValue = isUpdoo ? 1 : -1;
+    const { userId } = req.session;
+    // await Updoo.insert({
+    //   userId,
+    //   postId,
+    //   value: absoluteValue,
+    // });
+
+    getConnection().query(
+      `
+      START TRANSACTION;
+
+      insert into updoo ("userId", "postId", value)
+      values (${userId}, ${postId}, ${absoluteValue});
+
+      update post
+      set zpoints = zpoints + ${absoluteValue}
+      where _id = ${postId};
+
+      COMMIT;      
+
+    `
+    );
+
+    return true;
+  }
+
   // read posts
   @Query(() => PaginatedPosts) // graphql type
   async posts(
@@ -106,7 +144,7 @@ export class PostResolver {
     // }
 
     // const posts = await qb.getMany();
-    console.log("posts: ", posts);
+    // console.log("posts: ", posts);
 
     return {
       posts: posts.slice(0, realLimit),
