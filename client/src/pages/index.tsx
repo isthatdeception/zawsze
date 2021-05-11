@@ -14,13 +14,14 @@ import React, { useState } from "react";
 
 // relative imports
 import { Layout } from "../components/Layout";
+import { UpdooSec } from "../components/UpdooSec";
 import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
   // posts
   const [variables, setVariables] = useState({
-    limit: 10,
+    limit: 30,
     cursor: null as null | string,
   });
   const [{ data, fetching }] = usePostsQuery({
@@ -29,24 +30,37 @@ const Index = () => {
 
   // if we are not loading and  we got not data then we did something very wrong
   if (!fetching && !data) {
-    return (
-      <div>something is very wrong here. we got not posts to show you</div>
-    );
+    return <div>something is very wrong here. we got no posts to show you</div>;
   }
 
   return (
     <Layout>
-      <Flex align="center">
-        <Heading
-          fontSize="6xl"
-          fontWeight="extrabold"
-          bgGradient="linear(to-l, #f05454, #f05454)"
-          fon
-        >
-          zawsze
-        </Heading>
+      <Flex align="center" display="flex">
+        <Flex direction="row">
+          <Heading
+            fontSize="6xl"
+            fontWeight="extrabold"
+            fontStyle="inherit"
+            textColor="#325288"
+            bgColor="#f4eee8"
+          >
+            zawsze
+            <Box as="span" ml="2" color="#383e56" fontSize="semibold">
+              .
+            </Box>
+          </Heading>
+        </Flex>
         <NextLink href="/create-post">
-          <Link ml="auto">create-post</Link>
+          <Link
+            ml="auto"
+            _hover={{
+              textDecor: "none",
+              textColor: "#536162",
+              fontWeight: "1em",
+            }}
+          >
+            create-post
+          </Link>
         </NextLink>
       </Flex>
 
@@ -55,7 +69,7 @@ const Index = () => {
         <div>...loading</div>
       ) : (
         <Stack spacing={8}>
-          {data!.posts.map((post) => (
+          {data!.posts.posts.map((post) => (
             <Box
               p={5}
               key={post._id}
@@ -64,24 +78,46 @@ const Index = () => {
               flex="1"
               borderRadius="md"
             >
-              <Heading fontSize="xl">{post.title}</Heading>
-              <Text mt={4}>{post.textSnippet}</Text>
+              <Flex>
+                <UpdooSec post={post} />
+                <Flex direction="column">
+                  <Flex alignItems="flex-grow">
+                    <Heading fontSize="xl">{post.title}</Heading>
+                    <Text
+                      size="sm"
+                      ml={4}
+                      fontWeight="thin"
+                      fontStyle="normal"
+                      color="#383e56"
+                      _hover={{
+                        color: "#2b2e4a",
+                        wordSpacing: 0.2,
+                      }}
+                    >
+                      › posted by {post.creator.username}
+                    </Text>
+                  </Flex>
+                  <Text mt={4}>{post.textSnippet}</Text>
+                </Flex>
+              </Flex>
             </Box>
           ))}
         </Stack>
       )}
 
       {/** if there is no data we won't show laod more */}
-      {data ? (
+      {data && data.posts.hasMore ? (
         <Flex>
           <Button
             m="auto"
             my={8}
+            color="#ffffff"
+            colorScheme="twitter"
             isLoading={fetching}
             onClick={() => {
               setVariables({
                 limit: variables.limit,
-                cursor: data.posts[data.posts.length - 1].createdAt,
+                cursor: data.posts.posts[data.posts.posts.length - 1].createdAt,
               });
             }}
           >

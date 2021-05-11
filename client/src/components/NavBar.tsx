@@ -26,10 +26,29 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     body = (
       <>
         <NextLink href="/login">
-          <Link mr={2}>login</Link>
+          <Link
+            mr={2}
+            color="#536162"
+            _hover={{
+              textDecor: "none",
+              textColor: "black",
+              fontWeight: "1em",
+            }}
+          >
+            login
+          </Link>
         </NextLink>
         <NextLink href="/register">
-          <Link>register</Link>
+          <Link
+            color="#536162"
+            _hover={{
+              textDecor: "none",
+              textColor: "black",
+              fontWeight: "1em",
+            }}
+          >
+            register
+          </Link>
         </NextLink>
       </>
     );
@@ -42,8 +61,10 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           bgGradient="linear(to-l, #0a043c,#FF0080)"
           bgClip="text"
           fontSize="lg"
-          fontWeight="extrabold"
+          fontWeight="semibold"
           mr={4}
+          mt={2}
+          position="relative"
         >
           {data.me.username}
         </Text>
@@ -53,7 +74,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           size="md"
           variant="solid"
           ml={2}
+          position="inherit"
           colorScheme="twitter"
+          textDecoration="none"
           isLoading={logoutFetching}
           onClick={() => {
             logout();
@@ -67,16 +90,19 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
 
   return (
     <Flex
-      zIndex={2}
+      zIndex="overlay"
       position="sticky"
       top={0}
       bg="#f3f4ed"
       w="100%"
+      boxSizing="border-box"
       p={4}
       color="#435560"
       ml="auto"
     >
-      <Box ml="auto">{body}</Box>
+      <Box ml="auto" position="sticky">
+        {body}
+      </Box>
     </Flex>
   );
 };

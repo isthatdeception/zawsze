@@ -9,7 +9,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+
+// relative imports
 import { Post } from "./Post";
+import { Updoo } from "./Updoo";
 
 @ObjectType()
 @Entity()
@@ -32,6 +35,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
+
+  @OneToMany(() => Updoo, (updoo) => updoo.user)
+  updoos: Updoo[];
 
   @Field(() => String)
   @CreateDateColumn()

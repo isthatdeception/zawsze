@@ -8,6 +8,7 @@ import {
   InputType,
   Int,
   Mutation,
+  ObjectType,
   Query,
   Resolver,
   Root,
@@ -19,6 +20,7 @@ import { getConnection } from "typeorm";
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
+import { Updoo } from "../entities/Updoo";
 
 @InputType()
 class PostInput {
@@ -28,31 +30,167 @@ class PostInput {
   text: string;
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts: Post[];
+  @Field()
+  hasMore: boolean;
+}
+
 @Resolver(Post)
 export class PostResolver {
-  // read posts
-  @Query(() => [Post]) // graphql type
-  async posts(
-    @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
-  ): Promise<Post[]> {
-    // a limit for our pagination
-    const realLimit = Math.min(50, limit);
+  // voting on a post
+  // and checking the user is logged in
+  // only then he is authorized to vote
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg("postId", () => Int) postId: number,
+    @Arg("value", () => Int) value: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const isUpdoo = value !== -1;
+    const absoluteValue = isUpdoo ? 1 : -1;
+    const { userId } = req.session;
 
-    // querybuilder
-    const qb = getConnection()
-      .getRepository(Post)
-      .createQueryBuilder("post")
+    const updoo = await Updoo.findOne({ where: { postId, userId } });
 
-      .orderBy('"createdAt"', "DESC")
-      .take(realLimit);
+    if (updoo && updoo.value !== absoluteValue) {
+      // if the user has posted on the post before
+      // and they are changing their vote
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+          update updoo
+          set value = $1
+          where "postId" = $2 and "userId" = $3
+        `,
+          [absoluteValue, postId, userId]
+        );
 
-    // if there is a cursor we will paginate the data
-    if (cursor) {
-      qb.where('"createdAt" < :cursor', { cursor: new Date(parseInt(cursor)) });
+        await tm.query(
+          `
+          update post
+          set zpoints = zpoints + $1
+          where _id = $2
+        `,
+          [2 * absoluteValue, postId]
+        );
+      });
+    } else if (!updoo) {
+      // if the user
+      // has never voted before
+      // on the post
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+        insert into updoo ("userId", "postId", value)
+        values ($1, $2, $3);
+        `,
+          [userId, postId, absoluteValue]
+        );
+
+        await tm.query(
+          `
+        update post
+        set zpoints = zpoints + $1
+        where _id = $2
+  
+        `,
+          [absoluteValue, postId]
+        );
+      });
     }
 
-    return qb.getMany();
+    // await Updoo.insert({
+    //   userId,
+    //   postId,
+    //   value: absoluteValue,
+    // });
+
+    return true;
+  }
+
+  // read posts
+  @Query(() => PaginatedPosts) // graphql type
+  async posts(
+    @Arg("limit", () => Int) limit: number,
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext
+  ): Promise<PaginatedPosts> {
+    /**
+     *  if our limit is 50 then we will fetch 51 so that
+     *  we can track when extra posts are available to show to our users
+     *
+     *  hasmore just ensures we will not show the load more button if we get out of the posts
+     *  to show to our user
+     *
+     *  50 -> 51 if exists then hasMore is true
+     *  loadmore button will show
+     *
+     *  after that we will show the user all the posts within the real limit as
+     *  it was supposed to
+     */
+
+    // a limit for our pagination
+    const realLimit = Math.min(50, limit);
+    const paginatedLimit = realLimit + 1;
+
+    const substitutes: any[] = [paginatedLimit];
+
+    // if there is a cursor paginate the data
+    if (cursor) {
+      substitutes.push(new Date(parseInt(cursor)));
+    }
+
+    const posts = await getConnection().query(
+      `
+      select p.*, 
+      json_build_object(
+        '_id', u._id,
+        'username', u.username,
+        'email', u.email,
+        'createdAt', u."createdAt",
+        'updatedAt', u."updatedAt"
+        ) creator,
+      ${
+        req.session.userId
+          ? `(select value from updoo where "userId" = ${req.session.userId} and "postId" = p._id) "voteStatus"`
+          : 'null as "voteStatus"'
+      }
+      from post p
+      inner join public.user u on u._id = p."creatorId"
+      ${cursor ? `where p."createdAt" < $2` : ""}
+      order by p."createdAt" DESC
+      limit $1
+    `,
+      substitutes
+    );
+
+    // querybuilder
+    // const qb = getConnection()
+    //   .getRepository(Post)
+    //   .createQueryBuilder("post")
+
+    //   .innerJoinAndSelect("post.creator", "user", 'user._id = post."creatorId"')
+    //   .orderBy('post."createdAt"', "DESC")
+    //   .take(paginatedLimit);
+
+    // if there is a cursor we will paginate the data
+    // if (cursor) {
+    //   qb.where('post."createdAt" < :cursor', {
+    //     cursor: new Date(parseInt(cursor)),
+    //   });
+    // }
+
+    // const posts = await qb.getMany();
+    // console.log("posts: ", posts);
+
+    return {
+      posts: posts.slice(0, realLimit),
+      hasMore: posts.length === paginatedLimit,
+    }; // hasmore: true
   }
 
   // reading a specific one
@@ -65,7 +203,7 @@ export class PostResolver {
   // app and its post
   @FieldResolver(() => String)
   textSnippet(@Root() root: Post) {
-    return root.text.slice(0, 100);
+    return root.text.slice(0, 150);
   }
 
   // create post""
