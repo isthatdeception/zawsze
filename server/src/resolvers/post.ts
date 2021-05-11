@@ -20,6 +20,7 @@ import { getConnection } from "typeorm";
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
+import { Updoo } from "../entities/Updoo";
 
 @InputType()
 class PostInput {
@@ -52,27 +53,61 @@ export class PostResolver {
     const isUpdoo = value !== -1;
     const absoluteValue = isUpdoo ? 1 : -1;
     const { userId } = req.session;
+
+    const updoo = await Updoo.findOne({ where: { postId, userId } });
+
+    if (updoo && updoo.value !== absoluteValue) {
+      // if the user has posted on the post before
+      // and they are changing their vote
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+          update updoo
+          set value = $1
+          where "postId" = $2 and "userId" = $3
+        `,
+          [absoluteValue, postId, userId]
+        );
+
+        await tm.query(
+          `
+          update post
+          set zpoints = zpoints + $1
+          where _id = $2
+        `,
+          [2 * absoluteValue, postId]
+        );
+      });
+    } else if (!updoo) {
+      // if the user
+      // has never voted before
+      // on the post
+      await getConnection().transaction(async (tm) => {
+        await tm.query(
+          `
+        insert into updoo ("userId", "postId", value)
+        values ($1, $2, $3);
+        `,
+          [userId, postId, absoluteValue]
+        );
+
+        await tm.query(
+          `
+        update post
+        set zpoints = zpoints + $1
+        where _id = $2
+  
+        `,
+          [absoluteValue, postId]
+        );
+      });
+    }
+
     // await Updoo.insert({
     //   userId,
     //   postId,
     //   value: absoluteValue,
     // });
-
-    getConnection().query(
-      `
-      START TRANSACTION;
-
-      insert into updoo ("userId", "postId", value)
-      values (${userId}, ${postId}, ${absoluteValue});
-
-      update post
-      set zpoints = zpoints + ${absoluteValue}
-      where _id = ${postId};
-
-      COMMIT;      
-
-    `
-    );
 
     return true;
   }
@@ -81,7 +116,8 @@ export class PostResolver {
   @Query(() => PaginatedPosts) // graphql type
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
+    @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     /**
      *  if our limit is 50 then we will fetch 51 so that
@@ -101,11 +137,11 @@ export class PostResolver {
     const realLimit = Math.min(50, limit);
     const paginatedLimit = realLimit + 1;
 
-    const justPaginate: any[] = [paginatedLimit];
+    const substitutes: any[] = [paginatedLimit];
 
     // if there is a cursor paginate the data
     if (cursor) {
-      justPaginate.push(new Date(parseInt(cursor)));
+      substitutes.push(new Date(parseInt(cursor)));
     }
 
     const posts = await getConnection().query(
@@ -117,14 +153,19 @@ export class PostResolver {
         'email', u.email,
         'createdAt', u."createdAt",
         'updatedAt', u."updatedAt"
-        ) creator
+        ) creator,
+      ${
+        req.session.userId
+          ? `(select value from updoo where "userId" = ${req.session.userId} and "postId" = p._id) "voteStatus"`
+          : 'null as "voteStatus"'
+      }
       from post p
       inner join public.user u on u._id = p."creatorId"
       ${cursor ? `where p."createdAt" < $2` : ""}
       order by p."createdAt" DESC
       limit $1
     `,
-      justPaginate
+      substitutes
     );
 
     // querybuilder

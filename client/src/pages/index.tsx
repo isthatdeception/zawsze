@@ -35,18 +35,30 @@ const Index = () => {
 
   return (
     <Layout>
-      <Flex align="center">
-        <Heading
-          fontSize="6xl"
-          fontWeight="extrabold"
-          bgGradient="linear(to-l, #f05454, #f05454)"
-          fontStyle="inherit"
-        >
-          zawsze
-        </Heading>
-
+      <Flex align="center" display="flex">
+        <Flex direction="row">
+          <Heading
+            fontSize="6xl"
+            fontWeight="extrabold"
+            fontStyle="inherit"
+            textColor="#325288"
+            bgColor="#f4eee8"
+          >
+            zawsze
+            <Box as="span" ml="2" color="#383e56" fontSize="semibold">
+              .
+            </Box>
+          </Heading>
+        </Flex>
         <NextLink href="/create-post">
-          <Link ml="auto" textDecoration="none">
+          <Link
+            ml="auto"
+            _hover={{
+              textDecor: "none",
+              textColor: "#536162",
+              fontWeight: "1em",
+            }}
+          >
             create-post
           </Link>
         </NextLink>
@@ -71,7 +83,17 @@ const Index = () => {
                 <Flex direction="column">
                   <Flex alignItems="flex-grow">
                     <Heading fontSize="xl">{post.title}</Heading>
-                    <Text size="sm" ml={4} fontWeight="medium">
+                    <Text
+                      size="sm"
+                      ml={4}
+                      fontWeight="thin"
+                      fontStyle="normal"
+                      color="#383e56"
+                      _hover={{
+                        color: "#2b2e4a",
+                        wordSpacing: 0.2,
+                      }}
+                    >
                       › posted by {post.creator.username}
                     </Text>
                   </Flex>
@@ -89,6 +111,8 @@ const Index = () => {
           <Button
             m="auto"
             my={8}
+            color="#ffffff"
+            colorScheme="twitter"
             isLoading={fetching}
             onClick={() => {
               setVariables({

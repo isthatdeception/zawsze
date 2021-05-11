@@ -1,5 +1,5 @@
 // static imports
-import { dedupExchange, fetchExchange, stringifyVariables } from "urql";
+import { dedupExchange, fetchExchange, gql, stringifyVariables } from "urql";
 import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
 import { pipe, tap } from "wonka";
 import { Exchange } from "urql";
@@ -13,6 +13,7 @@ import {
   MeDocument,
   LoginMutation,
   RegisterMutation,
+  VoteMutationVariables,
 } from "../generated/graphql";
 
 // for all unauthenticated errors
@@ -102,6 +103,42 @@ export const createUrqlClient = (ssrExchange: any) => ({
       },
       updates: {
         Mutation: {
+          // voting a post
+          vote: (_result, _args, cache, _info) => {
+            const { postId, value } = _args as VoteMutationVariables;
+            const data = cache.readFragment(
+              gql`
+                fragment _ on Post {
+                  _id
+                  zpoints
+                  voteStatus
+                }
+              `,
+              { _id: postId } as any
+            );
+
+            // if we have successfully read the post zpoints
+            // update it
+            if (data) {
+              // if the user is already voted
+              if (data.voteStatus === value) {
+                return;
+              }
+
+              const newzpoints =
+                (data.zpoints as number) + (!data.voteStatus ? 1 : 2) * value;
+
+              cache.writeFragment(
+                gql`
+                  fragment _ on Post {
+                    zpoints
+                    voteStatus
+                  }
+                `,
+                { _id: postId, zpoints: newzpoints, voteStatus: value } as any
+              );
+            }
+          },
           // creating a post
           createPost: (_result, _args, cache, _info) => {
             const allFields = cache.inspectFields("Query");
