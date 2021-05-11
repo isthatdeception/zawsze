@@ -139,9 +139,16 @@ export class PostResolver {
 
     const substitutes: any[] = [paginatedLimit];
 
+    // if there is a user we will push it to our query
+    if (req.session.userId) {
+      substitutes.push(req.session.userId);
+    }
+
     // if there is a cursor paginate the data
+    let cursorIndex = 3;
     if (cursor) {
       substitutes.push(new Date(parseInt(cursor)));
+      cursorIndex = substitutes.length;
     }
 
     const posts = await getConnection().query(
@@ -156,12 +163,12 @@ export class PostResolver {
         ) creator,
       ${
         req.session.userId
-          ? `(select value from updoo where "userId" = ${req.session.userId} and "postId" = p._id) "voteStatus"`
+          ? `(select value from updoo where "userId" = $2 and "postId" = p._id) "voteStatus"`
           : 'null as "voteStatus"'
       }
       from post p
       inner join public.user u on u._id = p."creatorId"
-      ${cursor ? `where p."createdAt" < $2` : ""}
+      ${cursor ? `where p."createdAt" < ${cursorIndex}` : ""}
       order by p."createdAt" DESC
       limit $1
     `,

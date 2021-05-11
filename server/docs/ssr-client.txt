@@ -1,0 +1,14 @@
+/** ssr **/
+
+
+what ssr does?
+
+  /ssr/ 
+  browser-> next.js -> graphql api
+
+  /client/
+  browser -> graphql api
+
+
+  cookie should be able to skip through the next api so that we can handle or track the user
+  votes on our page.
