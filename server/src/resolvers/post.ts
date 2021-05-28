@@ -168,31 +168,14 @@ export class PostResolver {
       }
       from post p
       inner join public.user u on u._id = p."creatorId"
-      ${cursor ? `where p."createdAt" < ${cursorIndex}` : ""}
+      ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
       order by p."createdAt" DESC
       limit $1
     `,
       substitutes
     );
 
-    // querybuilder
-    // const qb = getConnection()
-    //   .getRepository(Post)
-    //   .createQueryBuilder("post")
-
-    //   .innerJoinAndSelect("post.creator", "user", 'user._id = post."creatorId"')
-    //   .orderBy('post."createdAt"', "DESC")
-    //   .take(paginatedLimit);
-
-    // if there is a cursor we will paginate the data
-    // if (cursor) {
-    //   qb.where('post."createdAt" < :cursor', {
-    //     cursor: new Date(parseInt(cursor)),
-    //   });
-    // }
-
-    // const posts = await qb.getMany();
-    // console.log("posts: ", posts);
+    console.log(posts);
 
     return {
       posts: posts.slice(0, realLimit),
@@ -201,9 +184,26 @@ export class PostResolver {
   }
 
   // reading a specific one
+  // and fetching all the sub contents that are neccessary for our page
   @Query(() => Post, { nullable: true })
-  post(@Arg("_id", () => Int) _id: number): Promise<Post | undefined> {
-    return Post.findOne(_id);
+  async post(@Arg("_id", () => Int) _id: number): Promise<Post | undefined> {
+    return Post.findOne(_id, { relations: ["creator"] });
+    // const readPost = await Post.findOne(_id, { relations: ["creator"] });
+    // return readPost;
+    // return Post.findOneOrFail(_id, { relations: ["creator"] });
+    // const singlepost = await Post.findOneOrFail(_id, {
+    //   relations: ["creator"],
+    // });
+    // console.log(singlepost);
+    // return singlepost;
+
+    // const post = await getConnection()
+    //   .createQueryBuilder()
+    //   .relation(Post, "creator")
+    //   .of(_id) // you can use just post id as well
+    //   .loadOne();
+
+    // return post;
   }
 
   // slicing the long posts so that one content doesnot take up all the space of

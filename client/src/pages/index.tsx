@@ -82,7 +82,16 @@ const Index = () => {
                 <UpdooSec post={post} />
                 <Flex direction="column">
                   <Flex alignItems="flex-grow">
-                    <Heading fontSize="xl">{post.title}</Heading>
+                    <NextLink href="/post/[_id]" as={`/post/${post._id}`}>
+                      <Link
+                        _hover={{
+                          textDecoration: "none",
+                          textColor: "#536162",
+                        }}
+                      >
+                        <Heading fontSize="xl">{post.title}</Heading>
+                      </Link>
+                    </NextLink>
                     <Text
                       size="sm"
                       ml={4}

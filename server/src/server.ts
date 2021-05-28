@@ -27,6 +27,10 @@ import {
   __prod__,
 } from "./constants";
 
+// for testing purposes [development]
+// import { Post } from "./entities/Post";
+// import { User } from "./entities/User";
+
 const server = async () => {
   // typeorm db connection
   const conn: Connection = await createConnection();
@@ -35,7 +39,9 @@ const server = async () => {
   await conn.runMigrations();
 
   //for deleteing all the bad posts from our database
+  // and for wiping all the existing bad users
   // await Post.delete({});
+  // await User.delete({});
 
   // express server
   const app = express();
