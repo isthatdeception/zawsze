@@ -19,7 +19,7 @@ import { Updoo } from "./Updoo";
 export class User extends BaseEntity {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
-  _id!: number; // can be a string
+  id!: number; // can be a string
 
   @Field()
   @Column({ unique: true })

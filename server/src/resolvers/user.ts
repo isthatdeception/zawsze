@@ -59,7 +59,7 @@ export class UserResolver {
   email(@Root() user: User, @Ctx() { req }: MyContext) {
     // if this is true
     // we will show the user thier id
-    if (req.session.userId === user._id) {
+    if (req.session.userId === user.id) {
       return user.email;
     }
     // if one is not the owner of the posts we will hide thier email address
@@ -121,7 +121,7 @@ export class UserResolver {
     // and hash it to the db
 
     await User.update(
-      { _id: userIdNum },
+      { id: userIdNum },
       { password: await agron2.hash(newPassword) }
     );
 
@@ -131,7 +131,7 @@ export class UserResolver {
 
     // login the user after changing the password
     // for which we need to immediately start that concerned user session
-    req.session.userId = user._id;
+    req.session.userId = user.id;
 
     return {
       user,
@@ -168,7 +168,7 @@ export class UserResolver {
     // storing in the redis
     await redis.set(
       FORGET_PASSWORD_PREFIX + token,
-      user._id,
+      user.id,
       "EX",
       1000 * 60 * 10
     ); // 10 mins
@@ -313,7 +313,7 @@ export class UserResolver {
     // store user id session
     // this will set a cookie for the user
     // so that still interact with the site
-    req.session.userId = user._id;
+    req.session.userId = user.id;
     return { user };
   }
 
@@ -354,7 +354,7 @@ export class UserResolver {
     }
 
     // presisting the user session
-    req.session!.userId = user._id;
+    req.session!.userId = user.id;
 
     return {
       user,

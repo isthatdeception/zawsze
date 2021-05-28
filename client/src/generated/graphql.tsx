@@ -48,11 +48,11 @@ export type MutationCreatePostArgs = {
 
 export type MutationUpdatePostArgs = {
   title?: Maybe<Scalars["String"]>;
-  _id: Scalars["Float"];
+  id: Scalars["Float"];
 };
 
 export type MutationDeletePostArgs = {
-  _id: Scalars["Float"];
+  id: Scalars["Float"];
 };
 
 export type MutationChangePasswordArgs = {
@@ -81,7 +81,7 @@ export type PaginatedPosts = {
 
 export type Post = {
   __typename?: "Post";
-  _id: Scalars["Int"];
+  id: Scalars["Int"];
   title: Scalars["String"];
   text: Scalars["String"];
   zpoints: Scalars["Float"];
@@ -112,12 +112,12 @@ export type QueryPostsArgs = {
 };
 
 export type QueryPostArgs = {
-  _id: Scalars["Int"];
+  id: Scalars["Int"];
 };
 
 export type User = {
   __typename?: "User";
-  _id: Scalars["Int"];
+  id: Scalars["Int"];
   username: Scalars["String"];
   email: Scalars["String"];
   createdAt: Scalars["String"];
@@ -143,7 +143,7 @@ export type ErrorInfoFragment = { __typename?: "FieldError" } & Pick<
 
 export type PostSnippetFragment = { __typename?: "Post" } & Pick<
   Post,
-  | "_id"
+  | "id"
   | "createdAt"
   | "updatedAt"
   | "title"
@@ -154,13 +154,13 @@ export type PostSnippetFragment = { __typename?: "Post" } & Pick<
 > & {
     creator: { __typename?: "User" } & Pick<
       User,
-      "_id" | "username" | "createdAt" | "updatedAt" | "email"
+      "id" | "username" | "createdAt" | "updatedAt" | "email"
     >;
   };
 
 export type UserInfoFragment = { __typename?: "User" } & Pick<
   User,
-  "_id" | "username"
+  "id" | "username"
 >;
 
 export type UserResponseInfoFragment = { __typename?: "UserResponse" } & {
@@ -184,7 +184,7 @@ export type CreatePostMutationVariables = Exact<{
 export type CreatePostMutation = { __typename?: "Mutation" } & {
   createPost: { __typename?: "Post" } & Pick<
     Post,
-    | "_id"
+    | "id"
     | "createdAt"
     | "updatedAt"
     | "title"
@@ -241,14 +241,14 @@ export type MeQuery = { __typename?: "Query" } & {
 };
 
 export type PostQueryVariables = Exact<{
-  _id: Scalars["Int"];
+  id: Scalars["Int"];
 }>;
 
 export type PostQuery = { __typename?: "Query" } & {
   post?: Maybe<
     { __typename?: "Post" } & Pick<
       Post,
-      | "_id"
+      | "id"
       | "createdAt"
       | "updatedAt"
       | "title"
@@ -259,7 +259,7 @@ export type PostQuery = { __typename?: "Query" } & {
     > & {
         creator: { __typename?: "User" } & Pick<
           User,
-          "_id" | "username" | "email" | "createdAt" | "updatedAt"
+          "id" | "username" | "email" | "createdAt" | "updatedAt"
         >;
       }
   >;
@@ -278,7 +278,7 @@ export type PostsQuery = { __typename?: "Query" } & {
 
 export const PostSnippetFragmentDoc = gql`
   fragment postSnippet on Post {
-    _id
+    id
     createdAt
     updatedAt
     title
@@ -287,7 +287,7 @@ export const PostSnippetFragmentDoc = gql`
     voteStatus
     zpoints
     creator {
-      _id
+      id
       username
       createdAt
       updatedAt
@@ -303,7 +303,7 @@ export const ErrorInfoFragmentDoc = gql`
 `;
 export const UserInfoFragmentDoc = gql`
   fragment userInfo on User {
-    _id
+    id
     username
   }
 `;
@@ -337,7 +337,7 @@ export function useChangePasswordMutation() {
 export const CreatePostDocument = gql`
   mutation CreatePost($input: PostInput!) {
     createPost(input: $input) {
-      _id
+      id
       createdAt
       updatedAt
       title
@@ -426,9 +426,9 @@ export function useMeQuery(
   return Urql.useQuery<MeQuery>({ query: MeDocument, ...options });
 }
 export const PostDocument = gql`
-  query Post($_id: Int!) {
-    post(_id: $_id) {
-      _id
+  query Post($id: Int!) {
+    post(id: $id) {
+      id
       createdAt
       updatedAt
       title
@@ -437,7 +437,7 @@ export const PostDocument = gql`
       voteStatus
       zpoints
       creator {
-        _id
+        id
         username
         email
         createdAt

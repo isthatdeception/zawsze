@@ -72,7 +72,7 @@ const Index = () => {
           {data!.posts.posts.map((post) => (
             <Box
               p={5}
-              key={post._id}
+              key={post.id}
               shadow="md"
               borderWidth="1px"
               flex="1"
@@ -82,7 +82,7 @@ const Index = () => {
                 <UpdooSec post={post} />
                 <Flex direction="column">
                   <Flex alignItems="flex-grow">
-                    <NextLink href="/post/[_id]" as={`/post/${post._id}`}>
+                    <NextLink href="/post/[id]" as={`/post/${post.id}`}>
                       <Link
                         _hover={{
                           textDecoration: "none",

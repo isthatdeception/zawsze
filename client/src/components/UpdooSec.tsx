@@ -12,9 +12,8 @@ interface UpdooSecProps {
 }
 
 export const UpdooSec: React.FC<UpdooSecProps> = ({ post }) => {
-  const [loadingState, setLoadingState] = useState<
-    "updoo-loading" | "downdoo-loading" | "no-loading"
-  >("no-loading");
+  const [loadingState, setLoadingState] =
+    useState<"updoo-loading" | "downdoo-loading" | "no-loading">("no-loading");
   const [, vote] = useVoteMutation();
 
   return (
@@ -34,7 +33,7 @@ export const UpdooSec: React.FC<UpdooSecProps> = ({ post }) => {
           }
           setLoadingState("updoo-loading");
           await vote({
-            postId: post._id,
+            postId: post.id,
             value: 1,
           });
           setLoadingState("no-loading");
@@ -66,7 +65,7 @@ export const UpdooSec: React.FC<UpdooSecProps> = ({ post }) => {
           }
           setLoadingState("downdoo-loading");
           await vote({
-            postId: post._id,
+            postId: post.id,
             value: -1,
           });
           setLoadingState("no-loading");

@@ -124,12 +124,12 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               const data = cache.readFragment(
                 gql`
                   fragment _ on Post {
-                    _id
+                    id
                     zpoints
                     voteStatus
                   }
                 `,
-                { _id: postId } as any
+                { id: postId } as any
               );
 
               // if we have successfully read the post zpoints
@@ -150,7 +150,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                       voteStatus
                     }
                   `,
-                  { _id: postId, zpoints: newzpoints, voteStatus: value } as any
+                  { id: postId, zpoints: newzpoints, voteStatus: value } as any
                 );
               }
             },
@@ -159,7 +159,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               const allFields = cache.inspectFields("Query");
 
               const fieldInfos = allFields.filter(
-                (info) => info.fieldName === ""
+                (info) => info.fieldName === "posts"
               );
 
               fieldInfos.forEach((info) => {

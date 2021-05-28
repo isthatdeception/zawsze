@@ -1,6 +1,6 @@
-query Post($_id: Int!) {
-  post(_id: $_id) {
-    _id
+query Post($id: Int!) {
+  post(id: $id) {
+    id
     createdAt
     updatedAt
     title
@@ -9,7 +9,7 @@ query Post($_id: Int!) {
     voteStatus
     zpoints
     creator {
-      _id
+      id
       username
       email
       createdAt

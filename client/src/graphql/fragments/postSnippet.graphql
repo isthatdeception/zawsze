@@ -1,5 +1,5 @@
 fragment postSnippet on Post {
-  _id
+  id
   createdAt
   updatedAt
   title
@@ -8,7 +8,7 @@ fragment postSnippet on Post {
   voteStatus
   zpoints
   creator {
-    _id
+    id
     username
     createdAt
     updatedAt

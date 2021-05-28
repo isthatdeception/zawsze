@@ -73,7 +73,7 @@ export class PostResolver {
           `
           update post
           set zpoints = zpoints + $1
-          where _id = $2
+          where id = $2
         `,
           [2 * absoluteValue, postId]
         );
@@ -95,7 +95,7 @@ export class PostResolver {
           `
         update post
         set zpoints = zpoints + $1
-        where _id = $2
+        where id = $2
   
         `,
           [absoluteValue, postId]
@@ -155,7 +155,7 @@ export class PostResolver {
       `
       select p.*, 
       json_build_object(
-        '_id', u._id,
+        'id', u.id,
         'username', u.username,
         'email', u.email,
         'createdAt', u."createdAt",
@@ -163,11 +163,11 @@ export class PostResolver {
         ) creator,
       ${
         req.session.userId
-          ? `(select value from updoo where "userId" = $2 and "postId" = p._id) "voteStatus"`
+          ? `(select value from updoo where "userId" = $2 and "postId" = p.id) "voteStatus"`
           : 'null as "voteStatus"'
       }
       from post p
-      inner join public.user u on u._id = p."creatorId"
+      inner join public.user u on u.id = p."creatorId"
       ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
       order by p."createdAt" DESC
       limit $1
@@ -186,12 +186,12 @@ export class PostResolver {
   // reading a specific one
   // and fetching all the sub contents that are neccessary for our page
   @Query(() => Post, { nullable: true })
-  async post(@Arg("_id", () => Int) _id: number): Promise<Post | undefined> {
-    return Post.findOne(_id, { relations: ["creator"] });
-    // const readPost = await Post.findOne(_id, { relations: ["creator"] });
+  async post(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id, { relations: ["creator"] });
+    // const readPost = await Post.findOne(id, { relations: ["creator"] });
     // return readPost;
-    // return Post.findOneOrFail(_id, { relations: ["creator"] });
-    // const singlepost = await Post.findOneOrFail(_id, {
+    // return Post.findOneOrFail(id, { relations: ["creator"] });
+    // const singlepost = await Post.findOneOrFail(id, {
     //   relations: ["creator"],
     // });
     // console.log(singlepost);
@@ -200,7 +200,7 @@ export class PostResolver {
     // const post = await getConnection()
     //   .createQueryBuilder()
     //   .relation(Post, "creator")
-    //   .of(_id) // you can use just post id as well
+    //   .of(id) // you can use just post id as well
     //   .loadOne();
 
     // return post;
@@ -229,26 +229,26 @@ export class PostResolver {
   // update post
   @Mutation(() => Post, { nullable: true })
   async updatePost(
-    @Arg("_id") _id: number,
+    @Arg("id") id: number,
     @Arg("title", () => String, { nullable: true }) title: string
   ): Promise<Post | null> {
-    const post = await Post.findOne({ where: { _id } });
+    const post = await Post.findOne({ where: { id } });
     // if for some reason we didnot find the post return null
     if (!post) {
       return null;
     }
     // and if the title of the post is not undefined we just presist the new values
     if (typeof title !== "undefined") {
-      Post.update({ _id }, { title });
+      Post.update({ id }, { title });
     }
     return post;
   }
 
   // delete post
   @Mutation(() => Boolean)
-  async deletePost(@Arg("_id") _id: number): Promise<boolean> {
-    // deleting the one post with the same _id
-    await Post.delete(_id);
+  async deletePost(@Arg("id") id: number): Promise<boolean> {
+    // deleting the one post with the same id
+    await Post.delete(id);
     return true;
   }
 }
