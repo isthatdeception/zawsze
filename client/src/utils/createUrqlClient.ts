@@ -14,6 +14,7 @@ import {
   LoginMutation,
   RegisterMutation,
   VoteMutationVariables,
+  DeletePostMutationVariables,
 } from "../generated/graphql";
 import { isOnServer } from "./isOnServer";
 
@@ -118,7 +119,13 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
         },
         updates: {
           Mutation: {
-            // voting a post
+            deletePost: (_result, _args, cache, _info) => {
+              cache.invalidate({
+                __typename: "Post",
+                id: (_args as DeletePostMutationVariables).id,
+              });
+            },
+
             vote: (_result, _args, cache, _info) => {
               const { postId, value } = _args as VoteMutationVariables;
               const data = cache.readFragment(
@@ -154,7 +161,6 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                 );
               }
             },
-            // creating a post
             createPost: (_result, _args, cache, _info) => {
               const allFields = cache.inspectFields("Query");
 
@@ -166,18 +172,18 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                 cache.invalidate("Query", "posts", info.arguments || {});
               });
             },
-            // logging out the user
             logout: (_result, _args, cache, _info) => {
+              // once logged out we will return the me query null
               betterUpdateQuery<LogoutMutation, MeQuery>(
                 cache,
                 { query: MeDocument },
                 _result,
-                () => ({ me: null }) // returning null
+                () => ({ me: null })
               );
             },
-
-            // we want to change the cache when we login the user
             login: (_result, _args, cache, _info) => {
+              // while logging in
+              // populate the me query
               betterUpdateQuery<LoginMutation, MeQuery>(
                 cache,
                 { query: MeDocument },
@@ -193,7 +199,6 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                 }
               );
             },
-            // we want to change the cache when we register the user
             register: (_result, _args, cache, _info) => {
               betterUpdateQuery<RegisterMutation, MeQuery>(
                 cache,

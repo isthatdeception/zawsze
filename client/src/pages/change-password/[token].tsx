@@ -24,7 +24,6 @@ const ChangePassword: NextPage = () => {
         <Formik
           initialValues={{ newPassword: "" }}
           onSubmit={async (values, { setErrors }) => {
-            console.log(values);
             // posting the input credentials to the server
             // token is available in router
             const response = await changePassword({

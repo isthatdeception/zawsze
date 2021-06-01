@@ -1,6 +1,6 @@
 // static import
 import { Button } from "@chakra-ui/button";
-import { Box, Flex, Link, Text } from "@chakra-ui/layout";
+import { Box, Flex, Heading, Link, Text } from "@chakra-ui/layout";
 import NextLink from "next/link";
 
 // relative import
@@ -53,12 +53,15 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
       </>
     );
   } else {
-    // user is logged in
+    {
+      /** username of logged in person */
+    }
+
     body = (
       <Flex>
-        {/** username of logged in person */}
         <Text
-          bgGradient="linear(to-l, #0a043c,#FF0080)"
+          // bgGradient="linear(to-l, #e0eafc,#cfdef3)"
+          bgGradient="linear(to-l, #C33764, #1D2671)"
           bgClip="text"
           fontSize="lg"
           fontWeight="semibold"
@@ -93,13 +96,32 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
       zIndex="overlay"
       position="sticky"
       top={0}
-      bg="#f3f4ed"
+      // bgGradient="linear(to right, #606c88, #3f4c6b)"
+      bg="#eeeeee"
       w="100%"
       boxSizing="border-box"
       p={4}
       color="#435560"
       ml="auto"
+      align="center"
     >
+      <NextLink href="/">
+        <Link _hover={{ textDecor: "none", textColor: "#383e56" }}>
+          <Heading
+            fontSize="3xl"
+            fontWeight="extrabold"
+            fontStyle="inherit"
+            textColor="#325288"
+            bgColor="#f4eee8"
+            ml="3"
+          >
+            zawsze
+            <Box as="span" ml="1" color="#383e56" fontSize="semibold">
+              .
+            </Box>
+          </Heading>
+        </Link>
+      </NextLink>
       <Box ml="auto" position="sticky">
         {body}
       </Box>

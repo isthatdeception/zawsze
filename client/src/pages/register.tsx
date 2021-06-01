@@ -21,7 +21,6 @@ const Register: React.FC<registerProps> = ({}) => {
       <Formik
         initialValues={{ email: "", username: "", password: "" }}
         onSubmit={async (values, { setErrors }) => {
-          console.log(values);
           // posting the input credentials to the server
           const response = await register({ options: values });
           // not worked

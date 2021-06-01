@@ -175,8 +175,6 @@ export class PostResolver {
       substitutes
     );
 
-    console.log(posts);
-
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === paginatedLimit,
@@ -188,22 +186,6 @@ export class PostResolver {
   @Query(() => Post, { nullable: true })
   async post(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
     return Post.findOne(id, { relations: ["creator"] });
-    // const readPost = await Post.findOne(id, { relations: ["creator"] });
-    // return readPost;
-    // return Post.findOneOrFail(id, { relations: ["creator"] });
-    // const singlepost = await Post.findOneOrFail(id, {
-    //   relations: ["creator"],
-    // });
-    // console.log(singlepost);
-    // return singlepost;
-
-    // const post = await getConnection()
-    //   .createQueryBuilder()
-    //   .relation(Post, "creator")
-    //   .of(id) // you can use just post id as well
-    //   .loadOne();
-
-    // return post;
   }
 
   // slicing the long posts so that one content doesnot take up all the space of
@@ -244,11 +226,23 @@ export class PostResolver {
     return post;
   }
 
-  // delete post
   @Mutation(() => Boolean)
-  async deletePost(@Arg("id") id: number): Promise<boolean> {
-    // deleting the one post with the same id
-    await Post.delete(id);
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg("id") id: number,
+    @Ctx() { req }: MyContext
+  ): Promise<boolean> {
+    // using cascade on updoo entity
+    const post = await Post.findOne(id);
+    if (!post) {
+      return false;
+    }
+    if (post.creatorId !== req.session.userId) {
+      throw new Error("not authorized");
+    }
+
+    await Post.delete({ id, creatorId: req.session.userId });
+
     return true;
   }
 }

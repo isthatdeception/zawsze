@@ -39,14 +39,22 @@ const Post = ({}) => {
   if (!data?.post) {
     return (
       <Layout>
-        <Box>oops! looks like no post found</Box>
+        <Box
+          marginTop={6}
+          alignContent="center"
+          flexDirection="column"
+          justifyContent="center"
+          display="flex"
+        >
+          oops! looks like no post found
+        </Box>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <Heading mb={4}>{data.post.title}</Heading>
+      <Heading mb={6}>{data.post.title}</Heading>
       {data.post.text}
     </Layout>
   );

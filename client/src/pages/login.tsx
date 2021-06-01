@@ -21,7 +21,6 @@ const Login: React.FC<{}> = ({}) => {
         <Formik
           initialValues={{ usernameOrEmail: "", password: "" }}
           onSubmit={async (values, { setErrors }) => {
-            console.log(values);
             // posting the input credentials to the server
             const response = await login(values);
             // not worked
