@@ -1,5 +1,5 @@
 // static imports
-import { DeleteIcon } from "@chakra-ui/icons";
+import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -16,7 +16,11 @@ import React, { useState } from "react";
 // relative imports
 import { Layout } from "../components/Layout";
 import { UpdooSec } from "../components/UpdooSec";
-import { useDeletePostMutation, usePostsQuery } from "../generated/graphql";
+import {
+  useDeletePostMutation,
+  useMeQuery,
+  usePostsQuery,
+} from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
@@ -25,6 +29,8 @@ const Index = () => {
     limit: 10,
     cursor: null as null | string,
   });
+
+  const [{ data: currentUserInfo }] = useMeQuery();
   const [{ data, fetching }] = usePostsQuery({
     variables,
   });
@@ -103,17 +109,39 @@ const Index = () => {
                           › posted by {post.creator.username}
                         </Text>
 
-                        <DeleteIcon
-                          ml="auto"
-                          color="red.500"
-                          aria-label="Delete Icon"
-                          _hover={{
-                            color: "red.700",
-                          }}
-                          onClick={() => {
-                            deletePost({ id: post.id });
-                          }}
-                        />
+                        {/**
+                         *  if current user is the rightful owner of the stuff
+                         * he needs to have the authority to delete or change the post
+                         *
+                         */}
+                        {currentUserInfo?.me?.id !== post.creator.id ? null : (
+                          <Box ml="auto">
+                            <NextLink
+                              href="/post/edit/[id]"
+                              as={`/post/edit/${post.id}`}
+                            >
+                              <EditIcon
+                                mr={4}
+                                color="gray.200"
+                                aria-label="Edit Icon"
+                                _hover={{
+                                  color: "blue.500",
+                                }}
+                              />
+                            </NextLink>
+
+                            <DeleteIcon
+                              color="gray.200"
+                              aria-label="Delete Icon"
+                              _hover={{
+                                color: "red.500",
+                              }}
+                              onClick={() => {
+                                deletePost({ id: post.id });
+                              }}
+                            />
+                          </Box>
+                        )}
                       </Flex>
                       <Text mt={4} alignItems="center">
                         {post.textSnippet}

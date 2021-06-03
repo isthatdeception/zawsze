@@ -93,7 +93,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   let cookie = "";
   // if the page is server rendered
   if (isOnServer()) {
-    cookie = ctx.req.headers.cookie;
+    cookie = ctx?.req?.headers?.cookie;
   }
 
   return {

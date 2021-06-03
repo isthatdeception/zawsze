@@ -257,8 +257,7 @@ export class UserResolver {
     try {
       // typeorm query builder
       // we could also have done
-      // user.create({}).save()
-      // with all the values under the bracket
+
       const result = await getConnection()
         .createQueryBuilder()
         .insert()
@@ -271,21 +270,6 @@ export class UserResolver {
         .returning("*")
         .execute();
 
-      // query builder
-      // for implicit behaviour with our server
-      // const result = (em as EntityManager)
-      //   .createQueryBuilder(User)
-      //   .getKnexQuery()
-      //   .insert({
-      //     username: options.username,
-      //     password: hashedPassword,
-      //     created_at: new Date(),
-      //     updated_at: new Date(),
-      //   })
-      //   .returning("*");
-
-      // user = result[0];
-      // console.log("result: ", result);
       user = result.raw[0];
     } catch (err) {
       console.log("message: ", err.message);
