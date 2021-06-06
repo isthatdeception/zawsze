@@ -2,6 +2,7 @@
 import { Button } from "@chakra-ui/button";
 import { Box, Flex, Heading, Link, Text } from "@chakra-ui/layout";
 import NextLink from "next/link";
+import { useRouter } from "next/router";
 
 // relative import
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
@@ -11,6 +12,7 @@ import { isOnServer } from "../utils/isOnServer";
 interface NavBarProps {}
 
 export const NavBar: React.FC<NavBarProps> = ({}) => {
+  const router = useRouter();
   // logout functionality
   const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
 
@@ -53,10 +55,6 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
       </>
     );
   } else {
-    {
-      /** username of logged in person */
-    }
-
     body = (
       <Flex>
         <Text
@@ -81,8 +79,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
           colorScheme="twitter"
           textDecoration="none"
           isLoading={logoutFetching}
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
+            router.reload();
           }}
         >
           logout

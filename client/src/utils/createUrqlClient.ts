@@ -1,6 +1,6 @@
 // static imports
 import { dedupExchange, fetchExchange, gql, stringifyVariables } from "urql";
-import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
+import { cacheExchange, Resolver, Cache } from "@urql/exchange-graphcache";
 import { pipe, tap } from "wonka";
 import { Exchange } from "urql";
 import Router from "next/router";
@@ -89,6 +89,22 @@ export const cursorPagination = (): Resolver => {
   };
 };
 
+/**
+ * this function takes all the data of screen and just reload the
+ * existing cache so that the new data can be shown immediatley to the user with
+ * thier interactons
+ * @param cache
+ */
+function invalidateScreenData(cache: Cache) {
+  const allFields = cache.inspectFields("Query");
+
+  const fieldInfos = allFields.filter((info) => info.fieldName === "posts");
+
+  fieldInfos.forEach((info) => {
+    cache.invalidate("Query", "posts", info.arguments || {});
+  });
+}
+
 export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   let cookie = "";
   // if the page is server rendered
@@ -162,15 +178,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               }
             },
             createPost: (_result, _args, cache, _info) => {
-              const allFields = cache.inspectFields("Query");
-
-              const fieldInfos = allFields.filter(
-                (info) => info.fieldName === "posts"
-              );
-
-              fieldInfos.forEach((info) => {
-                cache.invalidate("Query", "posts", info.arguments || {});
-              });
+              invalidateScreenData(cache);
             },
             logout: (_result, _args, cache, _info) => {
               // once logged out we will return the me query null
@@ -198,6 +206,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateScreenData(cache);
             },
             register: (_result, _args, cache, _info) => {
               betterUpdateQuery<RegisterMutation, MeQuery>(

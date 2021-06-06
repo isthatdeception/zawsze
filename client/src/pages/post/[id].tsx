@@ -1,11 +1,12 @@
 // static imports
 import { withUrqlClient } from "next-urql";
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Heading, Text, Stack } from "@chakra-ui/react";
 
 // relative imports
 import { createUrqlClient } from "../../utils/createUrqlClient";
 import { Layout } from "../../components/Layout";
 import { getPostFromServer } from "../../utils/getPostFromServer";
+import { PostInteractionButtons } from "../../components/PostInteractionButtons";
 
 const Post = ({}) => {
   const [{ data, error, fetching }] = getPostFromServer();
@@ -44,8 +45,25 @@ const Post = ({}) => {
 
   return (
     <Layout>
-      <Heading mb={6}>{data.post.title}</Heading>
-      {data.post.text}
+      <Stack spacing={4}>
+        <Heading
+          color="grey.800"
+          fontSize="3xl"
+          fontWeight="bold"
+          fontStyle="unset"
+        >
+          {data.post.title}
+        </Heading>
+        <Text color="gray.700" fontWeight="semibold">
+          {data.post.text}
+        </Text>
+        <Box>
+          <PostInteractionButtons
+            id={data.post.id}
+            creatorId={data.post.creator.id}
+          />
+        </Box>
+      </Stack>
     </Layout>
   );
 };

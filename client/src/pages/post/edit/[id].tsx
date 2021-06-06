@@ -50,7 +50,7 @@ const EditPost = ({}) => {
         onSubmit={async (values) => {
           const { error } = await updatePost({ id: intId, ...values });
           if (!error) {
-            router.push("/");
+            router.back();
           }
         }}
       >
