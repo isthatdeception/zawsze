@@ -21,6 +21,7 @@ import { Post } from "../entities/Post";
 import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
 import { Updoo } from "../entities/Updoo";
+import { User } from "../entities/User";
 
 @InputType()
 class PostInput {
@@ -38,6 +39,10 @@ class PaginatedPosts {
   hasMore: boolean;
 }
 
+/**
+ * function resolves query and requests to every post related requests
+ *
+ */
 @Resolver(Post)
 export class PostResolver {
   // voting on a post
@@ -112,12 +117,47 @@ export class PostResolver {
     return true;
   }
 
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { postCreatorLoader }: MyContext) {
+    return postCreatorLoader.load(post.creatorId);
+  }
+
+  @FieldResolver(() => Int, { nullable: true })
+  async voteStatus(
+    @Root() post: Post,
+    @Ctx() { updooStatusLoader, req }: MyContext
+  ) {
+    /**
+     * req.session.userId = user.id
+     * this makes it look like that the user is valid and is active
+     * if the user is not logged in
+     * we will simply just return
+     * so
+     *
+     * that updoo won't get requested from the server for the posts that are
+     * not up voted or down voted yet
+     */
+
+    if (!req.session.userId) {
+      console.log(`user not logged in or not found`);
+      return;
+    }
+
+    const updoo = await updooStatusLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
+    });
+
+    console.log(`updoo in the console: ${updoo}`);
+
+    return updoo ? updoo.value : null;
+  }
+
   // read posts
   @Query(() => PaginatedPosts) // graphql type
   async posts(
     @Arg("limit", () => Int) limit: number,
-    @Arg("cursor", () => String, { nullable: true }) cursor: string | null,
-    @Ctx() { req }: MyContext
+    @Arg("cursor", () => String, { nullable: true }) cursor: string | null
   ): Promise<PaginatedPosts> {
     /**
      *  if our limit is 50 then we will fetch 51 so that
@@ -136,36 +176,18 @@ export class PostResolver {
 
     const substitutes: any[] = [paginatedLimit];
 
-    // if there is a user we will push it to our query
-    if (req.session.userId) {
-      substitutes.push(req.session.userId);
-    }
-
     // if there is a cursor paginate the data
-    let cursorIndex = 3;
     if (cursor) {
       substitutes.push(new Date(parseInt(cursor)));
-      cursorIndex = substitutes.length;
     }
 
     const posts = await getConnection().query(
       `
-      select p.*, 
-      json_build_object(
-        'id', u.id,
-        'username', u.username,
-        'email', u.email,
-        'createdAt', u."createdAt",
-        'updatedAt', u."updatedAt"
-        ) creator,
-      ${
-        req.session.userId
-          ? `(select value from updoo where "userId" = $2 and "postId" = p.id) "voteStatus"`
-          : 'null as "voteStatus"'
-      }
+      select p.* 
+     
       from post p
-      inner join public.user u on u.id = p."creatorId"
-      ${cursor ? `where p."createdAt" < $${cursorIndex}` : ""}
+      
+      ${cursor ? `where p."createdAt" < $2` : ""}
       order by p."createdAt" DESC
       limit $1
     `,
@@ -182,7 +204,7 @@ export class PostResolver {
   // and fetching all the sub contents that are neccessary for our page
   @Query(() => Post, { nullable: true })
   async post(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
-    return Post.findOne(id, { relations: ["creator"] });
+    return Post.findOne(id);
   }
 
   // slicing the long posts so that one content doesnot take up all the space of

@@ -152,15 +152,18 @@ export class UserResolver {
       return true; // for security purposes
     }
 
-    // if there is a user and is in need to
-    // get new credentials for an account we will
-    // give them an email offering a link so that
-    // one can change his password with the link which directs to our client side
-    // with an specific secret token so that our server will recognize the user
-    // and the valid token
-
-    // this will give a random unique string
-    // 783473djskad-ujdhs-323-kdskd
+    /**
+     * if there is a user and is in need to
+     * get new credentials for an account we will
+     *  give them an email offering a link so that
+     * one can change his password with the link which directs to our client side
+     * with an specific secret token so that our server will recognize the user
+     * and validate the token
+     *
+     *
+     * this will give a random unique string
+     * 783473djskad-ujdhs-323-kdskd
+     */
 
     // intializing the new token
     const token = uuidv4();

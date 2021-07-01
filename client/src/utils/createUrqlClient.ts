@@ -83,7 +83,7 @@ export const cursorPagination = (): Resolver => {
 
     return {
       __typename: "PaginatedPosts",
-      hasMore, // true-false
+      hasMore /** true-false */,
       posts: results,
     };
   };
@@ -105,6 +105,12 @@ function invalidateScreenData(cache: Cache) {
   });
 }
 
+/**
+ *
+ * @param ssrExchange
+ * @param ctx
+ * @returns the page with the right information to the user needs
+ */
 export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   let cookie = "";
   // if the page is server rendered

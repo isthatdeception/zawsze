@@ -26,13 +26,18 @@ const Index = () => {
     cursor: null as null | string,
   });
 
-  const [{ data, fetching }] = usePostsQuery({
+  const [{ data, error, fetching }] = usePostsQuery({
     variables,
   });
 
   // if we are not loading and  we got not data then we did something very wrong
   if (!fetching && !data) {
-    return <div>something is very wrong here. we got no posts to show you</div>;
+    return (
+      <>
+        <div>something is very wrong here. we got no posts to show you</div>
+        <div>{error?.message}</div>
+      </>
+    );
   }
 
   return (
@@ -103,6 +108,7 @@ const Index = () => {
                         </Text>
 
                         {/**
+                         *
                          *  if current user is the rightful owner of the stuff
                          * he needs to have the authority to delete or change the post
                          *

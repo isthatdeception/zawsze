@@ -26,6 +26,8 @@ import {
   SERVER_PORT,
   __prod__,
 } from "./constants";
+import { createPostCreatorLoader } from "./utils/postCreatorLoader";
+import { createUpdooStatusLoader } from "./utils/updooStatusLoader";
 
 // for testing purposes [development]
 // import { Post } from "./entities/Post";
@@ -81,7 +83,13 @@ const server = async () => {
       validate: false, // here we are not using class validator
     }),
     // helps to talk to all the resolvers
-    context: ({ req, res }) => ({ req, res, redis }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      redis,
+      postCreatorLoader: createPostCreatorLoader(),
+      updooStatusLoader: createUpdooStatusLoader(),
+    }),
   });
 
   /**
